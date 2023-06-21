@@ -1,0 +1,165 @@
+CLIENTE
+{
+  "nome": "Nome do Cliente",
+  "endereco_entrega": {
+    "rua": "Rua do Cliente",
+    "numero": "Número do Cliente",
+    "complemento": "Complemento do Cliente",
+    "cidade": "Cidade do Cliente",
+    "estado": "Estado do Cliente",
+    "cep": "CEP do Cliente"
+  },
+  "telefone": "Telefone do Cliente"
+}
+PEDIDO
+{
+  "cliente_id": "ID do Cliente",
+  "data_hora": "Data e Hora do Pedido",
+  "tipo_entrega": "Tipo de Entrega (entrega ou local)",
+  "numero_mesa": "Número da Mesa (para pedidos locais)",
+  "itens": [
+    {
+      "tipo": "Tipo do Item (pizza ou bebida)",
+      "nome": "Nome do Item",
+      "quantidade": "Quantidade do Item",
+      "preco_unitario": "Preço Unitário do Item"
+    },
+    {
+      "tipo": "Tipo do Item (pizza ou bebida)",
+      "nome": "Nome do Item",
+      "quantidade": "Quantidade do Item",
+      "preco_unitario": "Preço Unitário do Item"
+    },
+    ... 
+  ]
+}
+PIZZA
+{
+    "nome": "Nome da Pizza",
+    "tamanho": "Tamanho da Pizza (pequena, média, grande)",
+    "preco_unitario": "Preço Unitário da Pizza",
+    "quantidade": "Quantidade de Pizzas"
+  }
+  
+  BEBIDA
+  
+  {
+    "nome": "Nome da Bebida",
+    "preco_unitario": "Preço Unitário da Bebida",
+    "quantidade": "Quantidade de Bebidas"
+  }
+
+
+  Comandos MongoDB para criar as coleções e inserir os dados.
+
+  db.clientes.insertMany([
+    {
+      "nome": "João Silva",
+      "endereco_entrega": "Rua A, 123",
+      "telefone": "(11) 987654321"
+    },
+    {
+      "nome": "Maria Souza",
+      "endereco_entrega": "Avenida B, 456",
+      "telefone": "(22) 123456789"
+    }
+  ])
+  
+  db.pedidos.insertOne({
+    "data_hora": new Date(),
+    "tipo_entrega": "entrega",
+    "numero_mesa": null,
+    "itens": [
+      {
+        "tipo": "pizza",
+        "nome": "Calabresa",
+        "quantidade": 2,
+        "preco_unitario": 25.99
+      },
+      {
+        "tipo": "bebida",
+        "nome": "Coca-Cola",
+        "quantidade": 3,
+        "preco_unitario": 5.99
+      }
+    ]
+  })
+  
+  db.pizzas.insertMany([
+    {
+      "nome": "Calabresa",
+      "tamanho": "grande",
+      "preco_unitario": 25.99,
+      "quantidade": 10
+    },
+    {
+      "nome": "Mussarela",
+      "tamanho": "média",
+      "preco_unitario": 20.99,
+      "quantidade": 5
+    }
+  ])
+  
+  db.bebidas.insertMany([
+    {
+      "nome": "Coca-Cola",
+      "preco_unitario": 5.99,
+      "quantidade": 20
+    },
+    {
+      "nome": "Guaraná",
+      "preco_unitario": 4.99,
+      "quantidade": 15
+    }
+  ])
+  
+
+  Comandos MongoDB para realizar atualizações e exclusões de dados. 
+
+  Atualização de um documento na coleção "clientes":
+db.clientes.updateOne(
+  { "_id": ObjectId("64930f901e3a4390f3826139") },
+  { $set: { "telefone": "(11) 999999999" } }
+)
+
+Atualização de um documento na coleção "pedidos":
+db.pedidos.updateOne(
+  { "_id": ObjectId("64930fb51e3a4390f382613b") },
+  { $set: { "tipo_entrega": "local" } }
+)
+
+Adição de um item em um array de documentos na coleção "pedidos":
+db.pedidos.updateOne(
+  { "_id": ObjectId("64930fb51e3a4390f382613b") },
+  { $push: { "itens": { "tipo": "pizza", "nome": "Margherita", "quantidade": 1, "tamanho": "media", "preco_unitario": 22.99 } } }
+)
+
+
+Remoção de um documento na coleção "clientes":
+db.clientes.deleteOne({ "_id": ObjectId("64930f901e3a4390f3826139") })
+
+
+Remoção de um item de um array de documentos na coleção "pedidos":
+db.pedidos.updateOne(
+  { "_id": ObjectId("64930fb51e3a4390f382613b") },  
+  { $pull: { "itens": { "tipo": "pizza", "nome": "Calabresa" } } }
+
+  
+  Comandos MongoDB para as consultas que devem incluir pelo menos uma de cada: consulta simples, consulta com uma condição.
+
+  Consulta simples para retornar todos os documentos da coleção "clientes":
+db.clientes.find()
+
+
+Consulta com uma condição para retornar os pedidos com tipo de entrega igual a "entrega":
+db.pedidos.find({ "tipo_entrega": "local" })
+
+Consulta para mostrar os clientes que pediram a pizza Margherita:
+db.pedidos.find({ "itens.nome": "Margherita", "itens.tipo": "pizza" })
+
+Consulta para mostrar os clientes que pediram a bebida Coca-Cola:
+db.pedidos.find({ "itens.nome": "Coca-Cola", "itens.tipo": "bebida" })
+
+Consulta para mostrar os pedidos que contêm tanto a pizza Margherita quanto a bebida Coca-Cola:
+db.pedidos.find({ "itens.nome": { $in: ["Margherita", "Coca-Cola"] } })
+
