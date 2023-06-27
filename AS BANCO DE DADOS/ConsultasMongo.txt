@@ -1,0 +1,172 @@
+
+
+Atualização de um documento na coleção "clientes":
+db.clientes.updateOne(
+  { "_id": ObjectId("64930f901e3a4390f3826139") },
+  { $set: { "telefone": "(11) 999999999" } }
+)
+
+Atualização de um documento na coleção "pedidos":
+db.pedidos.updateOne(
+  { "_id": ObjectId("64930fb51e3a4390f382613b") },
+  { $set: { "tipo_entrega": "local" } }
+)
+
+Adição de um item em um array de documentos na coleção "pedidos":
+db.pedidos.updateOne(
+  { "_id": ObjectId("64930fb51e3a4390f382613b") },
+  { $push: { "itens": { "tipo": "pizza", "nome": "Margherita", "quantidade": 1, "tamanho": "media", "preco_unitario": 22.99 } } }
+)
+
+
+Remoção de um documento na coleção "clientes":
+db.clientes.deleteOne({ "_id": ObjectId("64930f901e3a4390f3826139") })
+
+
+Remoção de um item de um array de documentos na coleção "pedidos":
+db.pedidos.updateOne(
+  { "_id": ObjectId("64930fb51e3a4390f382613b") },  
+  { $pull: { "itens": { "tipo": "pizza", "nome": "Calabresa" } } }
+
+  
+  Comandos MongoDB para as consultas que devem incluir pelo menos uma de cada: consulta simples, consulta com uma condição.
+
+  Consulta simples para retornar todos os documentos da coleção "clientes":
+db.clientes.find()
+
+
+Consulta com uma condição para retornar os pedidos com tipo de entrega igual a "entrega":
+db.pedidos.find({ "tipo_entrega": "local" })
+
+Consulta para mostrar os clientes que pediram a pizza Margherita:
+db.pedidos.find({ "itens.nome": "Margherita", "itens.tipo": "pizza" })
+
+Consulta para mostrar os clientes que pediram a bebida Coca-Cola:
+db.pedidos.find({ "itens.nome": "Coca-Cola", "itens.tipo": "bebida" })
+
+Consulta para mostrar os pedidos que contêm tanto a pizza Margherita quanto a bebida Coca-Cola:
+db.pedidos.find({ "itens.nome": { $in: ["Margherita", "Coca-Cola"] } })
+
+Comando MongoDB com 2 consultas usando Aggregate. 
+	uma que utilize join e outra que utilize group by.
+  Nessa consulta, utilizamos o estágio $lookup para realizar um join entre as coleções pedidos e clientes com base
+  no campo cliente_id. Em seguida, utilizamos o estágio $unwind para desagregar o array resultante do join. Por fim,
+  utilizamos o estágio $project para projetar apenas os campos desejados.
+  db.pedidos.aggregate([
+    {
+      $lookup: {
+        from: "clientes",
+        localField: "cliente_id",
+        foreignField: "_id",
+        as: "cliente"
+      }
+    },
+    {
+      $unwind: "$cliente"
+    },
+    {
+      $project: {
+        "cliente.nome": 1,
+        "cliente.endereco_entrega.cidade": 1,
+        "cliente.endereco_entrega.estado": 1,
+        "data_hora": 1,
+        "tipo_entrega": 1
+      }
+    }
+  ]);
+
+  Nessa consulta, utilizamos o estágio $group para agrupar os documentos da coleção pedidos com base no campo tipo_entrega.
+  Em seguida, utilizamos os operadores de agregação $sum e $size para calcular o total de pedidos e o total de itens em cada grupo. 
+  O resultado será um documento para cada tipo de entrega, contendo as informações calculadas.
+  db.pedidos.aggregate([
+    {
+      $group: {
+        _id: "$tipo_entrega",
+        total_pedidos: { $sum: 1 },
+        total_itens: { $sum: { $size: "$itens" } }
+      }
+    }
+  ]);
+  Para obter o cliente que mais consumiu produtos, podemos utilizar a agregação no MongoDB com o estágio $group para agrupar os pedidos pelo cliente e calcular o total de itens consumidos por cliente. Em seguida, utilizamos o estágio $sort para ordenar os resultados em ordem decrescente com base no total de itens consumidos. Por fim, utilizamos o estágio $limit para obter apenas o primeiro resultado, que será o cliente que mais consumiu produtos. Aqui está o comando:
+
+db.pedidos.aggregate([
+  {
+    $unwind: "$itens"
+  },
+  {
+    $group: {
+      _id: "$cliente_id",
+      total_itens: { $sum: "$itens.quantidade" }
+    }
+  },
+  {
+    $sort: {
+      total_itens: -1
+    }
+  },
+  {
+    $limit: 1
+  },
+  {
+    $lookup: {
+      from: "clientes",
+      localField: "_id",
+      foreignField: "_id",
+      as: "cliente"
+    }
+  },
+  {
+    $unwind: "$cliente"
+  },
+  {
+    $project: {
+      "cliente.nome": 1,
+      total_itens: 1
+    }
+  }
+]);
+
+
+
+Para obter os produtos mais vendidos, também podemos utilizar a agregação com o estágio $group para agrupar os itens por nome do produto e calcular a quantidade total vendida de cada produto. Em seguida, utilizamos o estágio $sort para ordenar os resultados em ordem decrescente com base na quantidade total vendida. Por fim, utilizamos o estágio $limit para obter apenas os primeiros resultados, que serão os produtos mais vendidos. Aqui está o comando:
+
+db.pedidos.aggregate([
+  {
+    $unwind: "$itens"
+  },
+  {
+    $group: {
+      _id: "$itens.nome",
+      quantidade_total: { $sum: "$itens.quantidade" }
+    }
+  },
+  {
+    $sort: {
+      quantidade_total: -1
+    }
+  },
+  {
+    $limit: 5
+  }
+]);
+
+
+Índices apropriados para melhorar o desempenho das consultas. Explicar por que desses índices.
+Índice para busca por nome do cliente:
+db.clientes.createIndex({ "nome": 1 })
+Esse índice ajudará a otimizar as consultas que buscam clientes com base no nome.
+
+
+Índice para busca por pizzas mais consumidas:
+db.pizzas.createIndex({ "quantidade": -1 })
+Esse índice ordena as pizzas com base na quantidade, permitindo que você recupere as pizzas mais consumidas com mais eficiência.
+
+
+Índice para busca por bebidas mais consumidas:
+db.bebidas.createIndex({ "quantidade": -1 })
+Esse índice ordena as bebidas com base na quantidade, permitindo que você recupere as bebidas mais consumidas com mais eficiência.
+
+Índice para busca por valores:
+db.pizzas.createIndex({ "preco_unitario": 1 })
+db.bebidas.createIndex({ "preco_unitario": 1 })
+Esses índices ajudam a otimizar consultas que envolvem a busca por pizzas ou bebidas com base no preço unitário.
